@@ -1,6 +1,7 @@
 {
     "Lua.diagnostics.globals": [
         "setfenv",
-        "getfenv"
+        "getfenv",
+        "module"
     ]
 }

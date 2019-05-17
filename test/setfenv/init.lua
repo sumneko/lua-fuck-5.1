@@ -3,7 +3,7 @@ YES = false
 
 local function f()
     FENVRESULT[2] = YES
-    local nf = require 'test.newfunction'
+    local nf = require 'test.setfenv.newfunction'
     return nf, function ()
         FENVRESULT[4] = YES
     end
