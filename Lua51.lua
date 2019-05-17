@@ -9,6 +9,8 @@ local error = error
 local debugGetinfo = debug.getinfo
 local registry = debug.getregistry()
 
+local lua51 = {}
+
 ---@param obj any
 ---@param expect string | "'nil'" | "'number'" | "'string'" | "'boolean'" | "'function'" | "'table'" | "'userdata'" | "'thread'"
 local function checkType(obj, expect, level)
@@ -39,7 +41,23 @@ local function getFunc(f, level)
     return info.func
 end
 
-local lua51 = {}
+local function findTable(name)
+    local pg = {}
+    local current = lua51
+    for id in name:gmatch '[^%.]+' do
+        id = id:match '^%s*(.-)%s*$'
+        pg[#pg+1] = id
+        local field = current[id]
+        if field == nil then
+            field = {}
+            current[id] = field
+        elseif type(field) ~= 'table' then
+            return nil, table.concat(pg, '.')
+        end
+        current = field
+    end
+    return current
+end
 
 lua51.arg = arg
 lua51.assert = assert
@@ -79,10 +97,12 @@ function lua51.module(name, ...)
     local loaded = registry._LOADED
     local mod = loaded[name]
     if type(mod) ~= 'table' then
-        mod = lua51._G[name]
-        if mod ~= nil then
-            
+        local err
+        mod, err = findTable(name)
+        if not mod then
+            error('name conflict for module ' .. err)
         end
+        loaded[name] = mod
     end
 end
 

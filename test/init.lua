@@ -51,6 +51,6 @@ end
 print('Test start ...')
 
 requireWithEnv('test.setfenv', lua51env)
---requireWithEnv('test.module', lua51env)
+requireWithEnv('test.module', lua51env)
 
 print('Test finish.')
