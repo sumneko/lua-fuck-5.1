@@ -7,7 +7,8 @@ local debugGetupvalue = debug.getupvalue
 local debugUpvaluejoin = debug.upvaluejoin
 local error = error
 local debugGetinfo = debug.getinfo
-local registry = debug.getregistry()
+local getmetatable = getmetatable
+local setmetatable = setmetatable
 
 local lua51 = {}
 
@@ -31,7 +32,7 @@ local function getFunc(f, level)
     if f < 0 then
         error('level must be non-negative', level)
     end
-    local info = debugGetinfo(f, 'f')
+    local info = debugGetinfo(f + level - 1, 'f')
     if not info then
         error('invalid level', level)
     end
@@ -57,6 +58,17 @@ local function findTable(name)
         current = field
     end
     return current
+end
+
+local function setfenv(f, tbl)
+    f = getFunc(f)
+    if debugGetupvalue(f, 1) ~= '_ENV' then
+        return
+    end
+    local function dummy()
+        return tbl
+    end
+    debugUpvaluejoin(f, 1, dummy, 1)
 end
 
 lua51.arg = arg
@@ -94,7 +106,7 @@ end
 
 function lua51.module(name, ...)
     checkType(name, 'string')
-    local loaded = registry._LOADED
+    local loaded = lua51.package.loaded
     local mod = loaded[name]
     if type(mod) ~= 'table' then
         local err
@@ -103,6 +115,16 @@ function lua51.module(name, ...)
             error('name conflict for module ' .. err)
         end
         loaded[name] = mod
+    end
+    if mod._NAME == nil then
+        mod._M = mod
+        mod._NAME = name
+        mod._PACKAGE = name:match '(.-)[^%.]+$'
+    end
+    local f = getFunc(1)
+    setfenv(f, mod)
+    for _, func in ipairs {...} do
+        func(mod)
     end
 end
 
@@ -115,16 +137,7 @@ lua51.rawget = rawget
 lua51.rawlen = rawlen
 lua51.rawset = rawset
 lua51.select = select
-
-function lua51.setfenv(f, tbl)
-    if debugGetupvalue(f, 1) ~= '_ENV' then
-        return
-    end
-    local function dummy()
-        return tbl
-    end
-    debugUpvaluejoin(f, 1, dummy, 1)
-end
+lua51.setfenv = setfenv
 
 lua51.setmetatable = setmetatable
 lua51.tonumber = tonumber
@@ -140,5 +153,18 @@ end
 
 lua51.require = require
 lua51.unpack = table.unpack
+
+lua51.package = {}
+
+lua51.package.loaded = {}
+
+function lua51.package.seeall(mod)
+    local mt = getmetatable(mod)
+    if not mt then
+        mt = {}
+        setmetatable(mod, mt)
+    end
+    mt.__index = lua51
+end
 
 return lua51
