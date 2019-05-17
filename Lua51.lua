@@ -12,6 +12,8 @@ local setmetatable = setmetatable
 
 local lua51 = {}
 
+local FenvCache = setmetatable({}, { __mode = 'kv' })
+
 ---@param obj any
 ---@param expect string | "'nil'" | "'number'" | "'string'" | "'boolean'" | "'function'" | "'table'" | "'userdata'" | "'thread'"
 local function checkType(obj, expect, level)
@@ -62,6 +64,7 @@ end
 
 local function setfenv(f, tbl)
     f = getFunc(f)
+    FenvCache[f] = tbl
     if debugGetupvalue(f, 1) ~= '_ENV' then
         return
     end
@@ -69,6 +72,14 @@ local function setfenv(f, tbl)
         return tbl
     end
     debugUpvaluejoin(f, 1, dummy, 1)
+end
+
+local function copyTable(t)
+    local nt = {}
+    for k, v in pairs(t) do
+        nt[k] = v
+    end
+    return nt
 end
 
 lua51.arg = arg
@@ -80,10 +91,10 @@ lua51._G = lua51
 
 function lua51.getfenv(f)
     f = getFunc(f)
-    local k, v = debugGetupvalue(f, 1)
-    if k ~= '_ENV' then
-        return _ENV
+    if FenvCache[f] then
+        return FenvCache[f]
     end
+    local _, v = debugGetupvalue(f, 1)
     return v
 end
 
@@ -156,7 +167,13 @@ lua51.unpack = table.unpack
 
 lua51.package = {}
 
-lua51.package.loaded = {}
+lua51.package.config = package.config
+lua51.package.cpath = package.cpath
+lua51.package.loaded = copyTable(package.loaded)
+lua51.package.loaders = copyTable(package.searchers)
+lua51.package.loadlib = package.loadlib
+lua51.package.path = package.path
+lua51.package.preload = copyTable(package.preload)
 
 function lua51.package.seeall(mod)
     local mt = getmetatable(mod)
