@@ -9,6 +9,7 @@ local error = error
 local debugGetinfo = debug.getinfo
 local getmetatable = getmetatable
 local setmetatable = setmetatable
+local debugGetlocal = debug.getlocal
 
 local lua51 = {}
 
@@ -63,7 +64,10 @@ local function findTable(name)
 end
 
 local function setfenv(f, tbl)
-    f = getFunc(f)
+    local tp = type(f)
+    if tp ~= 'function' and tp ~= 'userdata' and tp ~= 'thead' then
+        error [['setfenv' cannot change environment of given object]]
+    end
     FenvCache[f] = tbl
     if debugGetupvalue(f, 1) ~= '_ENV' then
         return
@@ -72,6 +76,14 @@ local function setfenv(f, tbl)
         return tbl
     end
     debugUpvaluejoin(f, 1, dummy, 1)
+end
+
+local function getfenv(f)
+    if FenvCache[f] then
+        return FenvCache[f]
+    end
+    local _, v = debugGetupvalue(f, 1)
+    return v
 end
 
 local function copyTable(t)
@@ -91,11 +103,7 @@ lua51._G = lua51
 
 function lua51.getfenv(f)
     f = getFunc(f)
-    if FenvCache[f] then
-        return FenvCache[f]
-    end
-    local _, v = debugGetupvalue(f, 1)
-    return v
+    return getfenv(f)
 end
 
 lua51.getmetatable = getmetatable
@@ -148,7 +156,11 @@ lua51.rawget = rawget
 lua51.rawlen = rawlen
 lua51.rawset = rawset
 lua51.select = select
-lua51.setfenv = setfenv
+
+function lua51.setfenv(f, tbl)
+    f = getFunc(f)
+    setfenv(f, tbl)
+end
 
 lua51.setmetatable = setmetatable
 lua51.tonumber = tonumber
@@ -164,6 +176,47 @@ end
 
 lua51.require = require
 lua51.unpack = table.unpack
+
+lua51.coroutine = {}
+
+lua51.coroutine.create = coroutine.create
+lua51.coroutine.isyieldable = coroutine.isyieldable
+lua51.coroutine.resume = coroutine.resume
+lua51.coroutine.running = coroutine.running
+lua51.coroutine.status = coroutine.status
+lua51.coroutine.wrap = coroutine.wrap
+lua51.coroutine.yield = coroutine.yield
+
+lua51.debug = {}
+
+lua51.debug.debug = debug.debug
+lua51.debug.getfenv = getfenv
+lua51.debug.gethook = debug.gethook
+lua51.debug.getinfo = debug.getinfo
+
+function lua51.debug.getlocal(...)
+    local n = select('#', ...)
+    if n == 2 then
+        local level, loc = ...
+        checkType(level, 'number')
+        return debugGetlocal(level, loc)
+    else
+        local th, level, loc = ...
+        return debugGetlocal(th, level, loc)
+    end
+end
+
+lua51.debug.getmetatable = debug.getmetatable
+lua51.debug.getregistry = debug.getregistry
+lua51.debug.getupvalue = debug.getupvalue
+lua51.debug.getuservalue = debug.getuservalue
+lua51.debug.setfenv = setfenv
+lua51.debug.sethook = debug.sethook
+lua51.debug.setlocal = debug.setlocal
+lua51.debug.setmetatable = debug.setmetatable
+lua51.debug.setupvalue = debug.setupvalue
+lua51.debug.setuservalue = debug.setuservalue
+lua51.debug.traceback = debug.traceback
 
 lua51.package = {}
 
