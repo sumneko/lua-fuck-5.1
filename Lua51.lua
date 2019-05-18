@@ -15,6 +15,8 @@ local stringFormat = string.format
 local stringMatch = string.match
 local tonumber = tonumber
 local mathLog = math.log
+local osExit = os.exit
+local stringRep = string.rep
 local EXP = math.exp(1)
 local PI = math.pi
 local RAD = PI / 180.0
@@ -306,6 +308,22 @@ function lua51.math.tanh(x)
     return (a - b) / (a + b)
 end
 
+lua51.os = {}
+lua51.os.close = os.clock
+lua51.os.date = os.date
+lua51.os.difftime = os.difftime
+lua51.os.execute = os.execute
+function lua51.os.exit(code)
+    code = tonumber(code) or 0
+    osExit(code)
+end
+lua51.os.getenv = os.getenv
+lua51.os.remove = os.remove
+lua51.os.rename = os.rename
+lua51.os.setlocale = os.setlocale
+lua51.os.time = os.time
+lua51.os.tmpname = os.tmpname
+
 lua51.package = {}
 lua51.package.config = package.config
 lua51.package.cpath = package.cpath
@@ -322,5 +340,42 @@ function lua51.package.seeall(mod)
     end
     mt.__index = lua51
 end
+
+-- WTF ('').format
+lua51.string = {}
+lua51.string.byte = string.byte
+lua51.string.char = string.char
+lua51.string.dump = string.dump
+lua51.string.find = string.find
+lua51.string.format = string.format
+lua51.string.gmatch = string.gmatch
+lua51.string.gsub = string.gsub
+lua51.string.len = string.len
+lua51.string.lower = string.lower
+lua51.string.match = string.match
+function lua51.string.rep(s, n)
+    return stringRep(s, n)
+end
+lua51.string.reverse = string.reverse
+lua51.string.sub = string.sub
+lua51.string.upper = string.upper
+
+lua51.table = {}
+lua51.table.concat = table.concat
+lua51.table.insert = table.insert
+function lua51.table.maxn(t)
+    checkType(t, 'table')
+    local max = 0
+    for k in pairs(t) do
+        if type(k) == 'number' then
+            if k > max then
+                max = k
+            end
+        end
+    end
+    return max
+end
+lua51.table.remove = table.remove
+lua51.table.sort = table.sort
 
 return lua51
