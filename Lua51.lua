@@ -17,6 +17,10 @@ local tonumber = tonumber
 local mathLog = math.log
 local osExit = os.exit
 local stringRep = string.rep
+local stringGmatch = string.gmatch
+local tableConcat = table.concat
+local pairs = pairs
+local ipairs = ipairs
 local EXP = math.exp(1)
 local PI = math.pi
 local RAD = PI / 180.0
@@ -30,7 +34,7 @@ local FenvCache = setmetatable({}, { __mode = 'kv' })
 local function checkType(obj, expect, level)
     local tp = type(obj)
     if tp ~= expect then
-        error(("%s expected, got %s"):format(expect, tp), level and (level + 1) or 3)
+        error(stringFormat("%s expected, got %s", expect, tp), level and (level + 1) or 3)
     end
 end
 
@@ -50,7 +54,7 @@ local function getFunc(f, level)
         error('invalid level', level)
     end
     if not info.func then
-        error(('no function environment for tail call at level %d'):format(f), level)
+        error(stringFormat('no function environment for tail call at level %d', f), level)
     end
     return info.func
 end
@@ -58,15 +62,15 @@ end
 local function findTable(name)
     local pg = {}
     local current = lua51
-    for id in name:gmatch '[^%.]+' do
-        id = id:match '^%s*(.-)%s*$'
+    for id in stringGmatch(name, '[^%.]+') do
+        id = stringMatch(id, '^%s*(.-)%s*$')
         pg[#pg+1] = id
         local field = current[id]
         if field == nil then
             field = {}
             current[id] = field
         elseif type(field) ~= 'table' then
-            return nil, table.concat(pg, '.')
+            return nil, tableConcat(pg, '.')
         end
         current = field
     end
@@ -142,7 +146,7 @@ function lua51.module(name, ...)
     if mod._NAME == nil then
         mod._M = mod
         mod._NAME = name
-        mod._PACKAGE = name:match '(.-)[^%.]+$'
+        mod._PACKAGE = stringMatch(name, '(.-)[^%.]+$')
     end
     local f = getFunc(1)
     setfenv(f, mod)
