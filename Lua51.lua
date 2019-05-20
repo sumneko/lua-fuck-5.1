@@ -21,6 +21,7 @@ local stringGmatch = string.gmatch
 local tableConcat = table.concat
 local pairs = pairs
 local ipairs = ipairs
+local loadfile = loadfile
 local EXP = math.exp(1)
 local PI = math.pi
 local RAD = PI / 180.0
@@ -108,10 +109,62 @@ local function copyTable(t)
     return nt
 end
 
+local function requireLoad(name)
+    local msg = ''
+    if type(package.searchers) ~= 'table' then
+        error("'package.searchers' must be a table", 3)
+    end
+    for _, searcher in ipairs(package.searchers) do
+        local f, extra = searcher(name)
+        if type(f) == 'function' then
+            return f, extra
+        elseif type(f) == 'string' then
+            msg = msg .. f
+        end
+    end
+    error(("module '%s' not found:%s"):format(name, msg), 3)
+end
+
+local function requireWithEnv(name, env)
+    local loaded = package.loaded
+    if type(name) ~= 'string' then
+        error(("bad argument #1 to 'require' (string expected, got %s)"):format(type(name)), 2)
+    end
+    local p = loaded[name]
+    if p ~= nil then
+        return p
+    end
+    local init, extra = requireLoad(name)
+    if type(env) == 'table' then
+        if debug.getupvalue(init, 1) == '_ENV' then
+            debug.setupvalue(init, 1, env)
+        end
+    end
+    local res = init(name, extra)
+    if res ~= nil then
+        loaded[name] = res
+    end
+    if loaded[name] == nil then
+        loaded[name] = true
+    end
+    return loaded[name], extra
+end
+
 lua51.arg = arg
 lua51.assert = assert
 lua51.collectgarbage = collectgarbage
-lua51.dofile = dofile
+function lua51.dofile(name)
+    local f, err
+    if name then
+        f, err = loadfile(name)
+    else
+        f, err = loadfile()
+    end
+    if not f then
+        error(err, 2)
+    end
+    return f()
+end
 lua51.error = error
 lua51._G = lua51
 function lua51.getfenv(f)
@@ -122,14 +175,14 @@ lua51.getmetatable = getmetatable
 lua51.ipairs = ipairs
 function lua51.load(func, name)
     checkType(func, 'function')
-    return load(func, name, 'bt')
+    return load(func, name, 'bt', lua51)
 end
 function lua51.loadfile(name)
-    return loadfile(name, 'bt')
+    return loadfile(name, 'bt', lua51)
 end
 function lua51.loadstring(str, name)
     checkType(str, 'string')
-    return load(str, name, 'bt')
+    return load(str, name, 'bt', lua51)
 end
 function lua51.module(name, ...)
     checkType(name, 'string')
@@ -177,7 +230,9 @@ function lua51.xpcall(f, msgh)
     checkType(f, 'function')
     return xpcall(f, msgh)
 end
-lua51.require = require
+function lua51.require(name)
+    return requireWithEnv(name, lua51)
+end
 lua51.unpack = table.unpack
 
 lua51.coroutine = {}
