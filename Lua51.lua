@@ -115,9 +115,9 @@ local function requireLoad(name)
         error("'package.searchers' must be a table", 3)
     end
     for _, searcher in ipairs(package.searchers) do
-        local f, extra = searcher(name)
+        local f = searcher(name)
         if type(f) == 'function' then
-            return f, extra
+            return f
         elseif type(f) == 'string' then
             msg = msg .. f
         end
@@ -134,20 +134,20 @@ local function requireWithEnv(name, env)
     if p ~= nil then
         return p
     end
-    local init, extra = requireLoad(name)
+    local init = requireLoad(name)
     if type(env) == 'table' then
         if debug.getupvalue(init, 1) == '_ENV' then
             debug.setupvalue(init, 1, env)
         end
     end
-    local res = init(name, extra)
+    local res = init(name)
     if res ~= nil then
         loaded[name] = res
     end
     if loaded[name] == nil then
         loaded[name] = true
     end
-    return loaded[name], extra
+    return loaded[name]
 end
 
 lua51.arg = arg
