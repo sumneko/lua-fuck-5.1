@@ -62,7 +62,7 @@ end
 
 local function findTable(name)
     local pg = {}
-    local current = lua51
+    local current = lua51._G
     for id in stringGmatch(name, '[^%.]+') do
         id = stringMatch(id, '^%s*(.-)%s*$')
         pg[#pg+1] = id
@@ -175,18 +175,18 @@ lua51.getmetatable = getmetatable
 lua51.ipairs = ipairs
 function lua51.load(func, name)
     checkType(func, 'function')
-    return load(func, name, 'bt', lua51)
+    return load(func, name, 'bt', lua51._G)
 end
 function lua51.loadfile(name)
-    return loadfile(name, 'bt', lua51)
+    return loadfile(name, 'bt', lua51._G)
 end
 function lua51.loadstring(str, name)
     checkType(str, 'string')
-    return load(str, name, 'bt', lua51)
+    return load(str, name, 'bt', lua51._G)
 end
 function lua51.module(name, ...)
     checkType(name, 'string')
-    local loaded = lua51.package.loaded
+    local loaded = lua51._G.package.loaded
     local mod = loaded[name]
     if type(mod) ~= 'table' then
         local err
@@ -231,7 +231,7 @@ function lua51.xpcall(f, msgh)
     return xpcall(f, msgh)
 end
 function lua51.require(name)
-    return requireWithEnv(name, lua51)
+    return requireWithEnv(name, lua51._G)
 end
 lua51.unpack = table.unpack
 
@@ -397,7 +397,7 @@ function lua51.package.seeall(mod)
         mt = {}
         setmetatable(mod, mt)
     end
-    mt.__index = lua51
+    mt.__index = lua51._G
 end
 
 -- WTF ('').format
