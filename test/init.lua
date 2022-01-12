@@ -8,4 +8,6 @@ lua51.require 'test.loadstring'
 lua51.require 'test.setfenv'
 lua51.require 'test.module'
 
+require 'test.bug.1'
+
 print('Test finish.')
