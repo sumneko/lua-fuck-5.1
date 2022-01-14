@@ -66,7 +66,7 @@ local function findTable(name)
     for id in stringGmatch(name, '[^%.]+') do
         id = stringMatch(id, '^%s*(.-)%s*$')
         pg[#pg+1] = id
-        local field = current[id]
+        local field = rawget(current, id)
         if field == nil then
             field = {}
             current[id] = field
@@ -111,10 +111,10 @@ end
 
 local function requireLoad(name)
     local msg = ''
-    if type(package.searchers) ~= 'table' then
-        error("'package.searchers' must be a table", 3)
+    if type(lua51._G.package.loaders) ~= 'table' then
+        error("'package.loaders' must be a table", 3)
     end
-    for _, searcher in ipairs(lua51._G.package.searchers) do
+    for _, searcher in ipairs(lua51._G.package.loaders) do
         local f = searcher(name)
         if type(f) == 'function' then
             return f
