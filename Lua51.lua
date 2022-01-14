@@ -114,7 +114,7 @@ local function requireLoad(name)
     if type(package.searchers) ~= 'table' then
         error("'package.searchers' must be a table", 3)
     end
-    for _, searcher in ipairs(package.searchers) do
+    for _, searcher in ipairs(lua51._G.package.searchers) do
         local f = searcher(name)
         if type(f) == 'function' then
             return f
@@ -126,7 +126,7 @@ local function requireLoad(name)
 end
 
 local function requireWithEnv(name, env)
-    local loaded = package.loaded
+    local loaded = lua51._G.package.loaded
     if type(name) ~= 'string' then
         error(("bad argument #1 to 'require' (string expected, got %s)"):format(type(name)), 2)
     end
