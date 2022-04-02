@@ -80,7 +80,7 @@ end
 
 local function setfenv(f, tbl)
     local tp = type(f)
-    if tp ~= 'function' and tp ~= 'userdata' and tp ~= 'thead' then
+    if tp ~= 'function' and tp ~= 'userdata' and tp ~= 'thread' then
         error [['setfenv' cannot change environment of given object]]
     end
     FenvCache[f] = tbl
